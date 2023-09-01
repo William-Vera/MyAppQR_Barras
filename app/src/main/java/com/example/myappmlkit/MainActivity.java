@@ -251,7 +251,6 @@ public class MainActivity extends AppCompatActivity implements OnSuccessListener
                                 case Barcode.TYPE_WIFI:
                                     String ssid = barcode.getWifi().getSsid();
                                     String password = barcode.getWifi().getPassword();
-                                    int type = barcode.getWifi().getEncryptionType();
                                     resultados.append("Tipo: WiFi\n");
                                     resultados.append("SSID: ").append(ssid).append("\n");
                                     resultados.append("Contraseña: ").append(password).append("\n\n");
