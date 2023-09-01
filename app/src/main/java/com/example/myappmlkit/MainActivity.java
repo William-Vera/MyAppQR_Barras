@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
@@ -23,6 +24,11 @@ import android.Manifest;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.mlkit.vision.barcode.BarcodeScanner;
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
+import com.google.mlkit.vision.barcode.BarcodeScanning;
+import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.face.Face;
 import com.google.mlkit.vision.face.FaceContour;
@@ -206,5 +212,72 @@ public class MainActivity extends AppCompatActivity implements OnSuccessListener
                     }
                 })
                 .addOnFailureListener(this);
+    }
+    public void scanQR(View view) {
+        if (mSelectedImage != null) {
+            InputImage image = InputImage.fromBitmap(mSelectedImage, 0);
+            scanCodigos(image, 256,4096,128);
+
+        } else {
+            txtResults.setText("No se ha seleccionado una imagen para escanear.");
+        }
+    }
+
+    public void scanBar(View view) {
+        if (mSelectedImage != null) {
+            InputImage image = InputImage.fromBitmap(mSelectedImage, 0);
+            scanCodigos(image,32,64,128);
+
+        } else {
+            txtResults.setText("No se ha seleccionado una imagen para escanear.");
+        }
+    }
+    private void scanCodigos(InputImage image, int f1, int f2, int f3) {
+        BarcodeScannerOptions options =
+                new BarcodeScannerOptions.Builder()
+                        .setBarcodeFormats(f1,f2,f3)
+                        .build();
+
+        BarcodeScanner scanner = BarcodeScanning.getClient(options);
+
+        Task<List<Barcode>> result = scanner.process(image)
+                .addOnSuccessListener(new OnSuccessListener<List<Barcode>>() {
+                    @Override
+                    public void onSuccess(List<Barcode> barcodes) {
+                        StringBuilder resultados = new StringBuilder();
+                        for (Barcode barcode : barcodes) {
+                            int valueType = barcode.getValueType();
+                            switch (valueType) {
+                                case Barcode.TYPE_WIFI:
+                                    String ssid = barcode.getWifi().getSsid();
+                                    String password = barcode.getWifi().getPassword();
+                                    int type = barcode.getWifi().getEncryptionType();
+                                    resultados.append("Tipo: WiFi\n");
+                                    resultados.append("SSID: ").append(ssid).append("\n");
+                                    resultados.append("Contraseña: ").append(password).append("\n\n");
+                                    break;
+                                case Barcode.TYPE_URL:
+                                    String title = barcode.getUrl().getTitle();
+                                    String url = barcode.getUrl().getUrl();
+                                    resultados.append("Tipo: URL\n");
+                                    resultados.append("Título: ").append(title).append("\n");
+                                    resultados.append("URL: ").append(url).append("\n\n");
+                                    break;
+                                default:
+                                    String rawValue = barcode.getRawValue();
+                                    resultados.append("Tipo: ").append(barcode.getFormat()).append("\n");
+                                    resultados.append("Dato: ").append(rawValue).append("\n\n");
+                                    break;
+                            }
+                        }
+                        txtResults.setText(resultados.toString());
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        txtResults.setText("No se ha seleccionado una imagen para escanear.");
+                    }
+                });
     }
 }
